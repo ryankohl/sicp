@@ -1,5 +1,6 @@
 (ns sicp.core)
 
+;; ex 1.11
 (defn e1-11-r [n]
   (cond (< n 3) n
         (>= n 3) (+ (e11-r (- n 1))
@@ -16,11 +17,13 @@
           (< counter 2) (recur (inc counter) (inc one) one two)
           true (recur (inc counter) (f one two three) one two))))
 
+;; ex 1.12
 (defn f [s i] (if (contains? (vec (range (count s)))  i) (nth s i) 0))
 (defn e1-12 [n]
   (cond (= n 1) [1]
         true (map #(+ (f (e12 (- n 1)) (- % 1)) (f (e12 (- n 1)) %)) (range n))))
 
+;; ex 1.16
 (defn e1-16 [b n]
   (loop [a 1
          y 0]
@@ -28,6 +31,7 @@
           (= n (+ y 1)) (* a b)
           true (recur (* a b b) (+ y 2)))))
 
+;; ex 1.17
 (defn f [x] (* 2 x))
 (defn g [x] (/ x 2))
 (defn e1-17 [x y]
@@ -35,6 +39,7 @@
         (even? y) (f (e17 x (g y)))
         (odd? y) (+ x (e17 x (- y 1)))))
 
+;; ex 1.18
 (defn f [x] (* 2 x))
 (defn e1-18 [x y]
   (loop [a 0
@@ -43,12 +48,14 @@
           (= y (+ b 1)) (+ a x)
           true (recur (+ a (f x)) (+ b 2)))))
 
+;; ex 1.21
 (defn f [n t]
   (cond (> (* t t) n) n
         (= (rem n t) 0) t
         true (f n (inc t))))
 (defn e1-21 [x] (f x 2))
 
+;; ex 1.22
 (defn g? [x] (= x (e1-21 x)))
 (defn nxt [x]
   (loop [a (inc x)]
@@ -61,6 +68,7 @@
     (cond (= 3 (count a)) a
           true (recur (conj a (nxt b)) (inc (nxt b))))))
 
+;; ex 1.23
 (defn f [n t]
   (loop [a t]
     (cond (> (* a a) n) n
@@ -78,3 +86,88 @@
          b (inc x)]
     (cond (= 3 (count a)) a
           true (recur (conj a (nxt b)) (inc (nxt b))))))
+
+;; ex 1.29
+(defn integral [f a b n]
+  (let [h (/ (- b a) n)
+        y #(f (+ a (* % h)))]
+  (loop [k 0
+         ans 0]
+    (cond (= k 0) (recur (inc k) (+ ans (y k)))
+          (= k n) (* (/ h 3) (+ ans (y k)))
+          (odd? k) (recur (inc k) (+ ans (* 4 (y k))))
+          (even? k) (recur (inc k) (+ ans (* 2 (y k))))))))
+(def e1-29 (integral #(* % % %) 0 1 500))
+
+;; e1.30
+(defn sum [f a nxt b]
+  (loop [x a
+         r 0]
+    (cond (= x b) (+ r (f x))
+          true (recur (nxt x) (+ r (f x))))))
+
+;; e1.31
+(defn prod [f a nxt b]
+  (loop [x a
+         r 1]
+    (cond (= x b) (* r (f x))
+          true (recur (nxt x) (* r (f x))))))
+(defn fac [x] (prod #(+ 0 %) x dec 1))
+(defn mypi [n]
+  (double (* 2 (/ (*
+                   (* 2 n)
+                   (prod #(* % %) (- (* 2 n) 2) #(- % 2) 2))
+                  (prod #(* % %) (- (* 2 n) 1) #(- % 2) 3)))))
+
+;; e1.32
+(defn accumulate [combiner null-value f a nxt b]
+  (loop [x a
+         r null-value]
+    (cond (= x b) (combiner r (f x))
+          true (recur (nxt x) (combiner r (f x))))))
+
+;; e1.33
+(defn filter-accumulate [filt combiner null-value f a nxt b]
+  (loop [x a
+         r null-value]
+    (cond (= x (nxt b)) r
+          (filt x) (recur (nxt x) (combiner r (f x)))
+          true (recur (nxt x) r))))
+(defn sq [x] (* x x))
+(defn lcd [n t]
+  (loop [a t]
+    (cond (> (* a a) n) n
+          (= (rem n a) 0) a
+          (= 2 a) (recur 3)
+          true (recur (+ a 2)))))
+(defn gcd [a b]
+  (loop [x (min a b)]
+    (cond (= 0 (mod b x) (mod a x)) x
+          true (recur (dec x)))))
+(defn prime? [x] (and (not= x 1) (= x (lcd x 2))))
+(defn sumsqprime [x] (filter-accumulate prime? + 0 sq 1 inc x))
+(defn relprime? [a b] (= (gcd a b) 1))
+(defn b [x] (filter-accumulate #(relprime? % x) * 1 identity x dec 1))
+
+;; e1.34
+(defn fixed-point [f init tol]
+  (loop [g init
+         n (f g)]
+    (cond (< (Math/abs (- g n)) tol) n
+          true (recur n (f n)))))
+(defn avg [L] (/ (reduce + L) (count L)))
+(defn sqrt-fp [x] (fixed-point #(avg [% (/ x %)]) 1.0 0.0001))
+(defn golden-fp [x] (fixed-point #(+ 1 (/ 1 %) ) 1.0 0.0001))
+(defn fp [f init tol]
+  (loop [g init
+         n (f g)]
+    (prn g)
+    (cond (< (Math/abs (- g n)) tol) n
+          true (recur n (f n)))))
+(defn xx-fp [x] (fp #(/ (Math/log10 1000) (Math/log10 %)) 2 0.0001))
+(defn cont-frac [n d k]
+  (loop [i k
+         x (+ (d (dec i)) (/ (n i) (d i)))]
+    (cond (= i 2) (/ (n i) x)
+          true (recur (dec i) (+ (d (- i 2)) (/ (n (dec i)) x))))))
+
