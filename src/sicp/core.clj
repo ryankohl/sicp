@@ -99,14 +99,14 @@
           (even? k) (recur (inc k) (+ ans (* 2 (y k))))))))
 (def e1-29 (integral #(* % % %) 0 1 500))
 
-;; e1.30
+;; ex 1.30
 (defn sum [f a nxt b]
   (loop [x a
          r 0]
     (cond (= x b) (+ r (f x))
           true (recur (nxt x) (+ r (f x))))))
 
-;; e1.31
+;; ex 1.31
 (defn prod [f a nxt b]
   (loop [x a
          r 1]
@@ -119,14 +119,14 @@
                    (prod #(* % %) (- (* 2 n) 2) #(- % 2) 2))
                   (prod #(* % %) (- (* 2 n) 1) #(- % 2) 3)))))
 
-;; e1.32
+;; ex 1.32
 (defn accumulate [combiner null-value f a nxt b]
   (loop [x a
          r null-value]
     (cond (= x b) (combiner r (f x))
           true (recur (nxt x) (combiner r (f x))))))
 
-;; e1.33
+;; ex 1.33
 (defn filter-accumulate [filt combiner null-value f a nxt b]
   (loop [x a
          r null-value]
@@ -149,7 +149,7 @@
 (defn relprime? [a b] (= (gcd a b) 1))
 (defn b [x] (filter-accumulate #(relprime? % x) * 1 identity x dec 1))
 
-;; e1.34
+;; ex 1.34
 (defn fixed-point [f init tol]
   (loop [g init
          n (f g)]
@@ -157,7 +157,11 @@
           true (recur n (f n)))))
 (defn avg [L] (/ (reduce + L) (count L)))
 (defn sqrt-fp [x] (fixed-point #(avg [% (/ x %)]) 1.0 0.0001))
+
+;; ex 1.35
 (defn golden-fp [x] (fixed-point #(+ 1 (/ 1 %) ) 1.0 0.0001))
+
+;; ex 1.36
 (defn fp [f init tol]
   (loop [g init
          n (f g)]
@@ -165,9 +169,61 @@
     (cond (< (Math/abs (- g n)) tol) n
           true (recur n (f n)))))
 (defn xx-fp [x] (fp #(/ (Math/log10 1000) (Math/log10 %)) 2 0.0001))
+
+;; ex 1.37
 (defn cont-frac [n d k]
   (loop [i k
          x (+ (d (dec i)) (/ (n i) (d i)))]
     (cond (= i 2) (/ (n i) x)
           true (recur (dec i) (+ (d (- i 2)) (/ (n (dec i)) x))))))
+(double (letfn [(f [x] 1)] (cont-frac f f 10))) 
+
+;; ex 1.38
+(defn f [x]
+  (loop [i 1
+         ans 1]
+    (cond (= x 1) 1
+          (= x 2) 2
+          (and (= x i) (< (mod i 3) 2)) 1
+          (= x i) (* 2 ans)
+          (= 2 (mod i 3)) (recur (inc i) (inc ans))
+          true (recur (inc i) ans))))
+(double (letfn [(n [x] 1)] (+ 2 (cont-frac n f 10))))
+
+;; ex 1.39
+(defn odds [x] (- (* 2 x) 1))
+(defn sq-r [x r] (if (= x 1) r (* r r)))
+(defn tan-cf [r k] (cont-frac #(sq-r % r) odds  k))
+
+;; ex 1.40
+(defn cubic [a b c] (fn [x] (+ (* x x x)
+                              (* a x x)
+                              (* b x)
+                              c)))
+
+;; ex 1.41
+(defn dble [g] (fn [x] (g (g x))))
+
+;; ex 1.42
+(defn compose [g h] (fn [x] (g (h x))))
+
+;; ex 1.43
+(defn repeated [g n]
+  (loop [i 0
+         ans identity]
+    (cond (= i n) ans
+          true (recur (inc i) (compose g ans)))))
+
+;; ex 1.44
+(defn smooth [g dx] (fn [x] (avg [(g x)
+                                (g (- x dx))
+                                (g (+ x dx))])))
+(defn n-smooth [n g dx] (repeated (smooth g dx) n))
+
+;; ex 1.45
+(defn average-damp [g] (fn [x] (avg [x (g x)])))
+(defn nth-root [x n] (fn [y] (/ x (Math/pow y (- n 1)))))
+(defn nth-fp [x n i]
+  (fixed-point (repeated (average-damp (nth-root x n)) i) 1.0 0.0001))
+
 
