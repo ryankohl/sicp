@@ -1,11 +1,11 @@
-(ns sicp.core)
+(ns sicp.chapter-1)
 
 ;; ex 1.11
 (defn e1-11-r [n]
   (cond (< n 3) n
-        (>= n 3) (+ (e11-r (- n 1))
-                    (* 2 (e11-r (- n 2)))
-                    (* 3 (e11-r (- n 3))))))
+        (>= n 3) (+ (e1-11-r (- n 1))
+                    (* 2 (e1-11-r (- n 2)))
+                    (* 3 (e1-11-r (- n 3))))))
 
 (defn f [a b c] (+ a (* 2 b) (* 3 c)))
 (defn e1-11-i [n]
@@ -21,7 +21,9 @@
 (defn f [s i] (if (contains? (vec (range (count s)))  i) (nth s i) 0))
 (defn e1-12 [n]
   (cond (= n 1) [1]
-        true (map #(+ (f (e12 (- n 1)) (- % 1)) (f (e12 (- n 1)) %)) (range n))))
+        true (map #(+ (f (e1-12 (- n 1)) (- % 1))
+                      (f (e1-12 (- n 1)) %))
+                  (range n))))
 
 ;; ex 1.16
 (defn e1-16 [b n]
@@ -36,8 +38,8 @@
 (defn g [x] (/ x 2))
 (defn e1-17 [x y]
   (cond (= y 0) 0
-        (even? y) (f (e17 x (g y)))
-        (odd? y) (+ x (e17 x (- y 1)))))
+        (even? y) (f (e1-17 x (g y)))
+        (odd? y) (+ x (e1-17 x (- y 1)))))
 
 ;; ex 1.18
 (defn f [x] (* 2 x))
@@ -221,9 +223,27 @@
 (defn n-smooth [n g dx] (repeated (smooth g dx) n))
 
 ;; ex 1.45
+(defn fixed-point [f init tol]
+  (loop [g init
+         n (f g)]
+    (cond (< (Math/abs (- g n)) tol) n
+          true (recur n (f n)))))
+(defn avg [L] (/ (reduce + L) (count L)))
 (defn average-damp [g] (fn [x] (avg [x (g x)])))
 (defn nth-root [x n] (fn [y] (/ x (Math/pow y (- n 1)))))
 (defn nth-fp [x n i]
   (fixed-point (repeated (average-damp (nth-root x n)) i) 1.0 0.0001))
+
+;; ex 1.46
+(defn iterative-improve [checkFn? improveFn]
+  (fn [x] (loop [ans x]
+           (cond (checkFn? ans) ans
+                 true (recur (improveFn ans))))))
+(defn sqrt-ii [x]
+  (iterative-improve #(< (Math/abs (double (- x (* % %)))) 0.001)
+                     #(avg [% (/ x %)])))
+(defn fp-ii [f]
+  (iterative-improve #(< (Math/abs (double (- % (f %)))) 0.001)
+                     f))
 
 
