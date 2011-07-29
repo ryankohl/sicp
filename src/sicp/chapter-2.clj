@@ -225,7 +225,8 @@
   (let [x (branch-structure b)]
   (loop [ans 0]
     (cond (number? x) x
-          (coll? x) (total-weight x)))))
+          (coll? x) (+ (branch-weight (left-branch x))
+                       (branch-weight (right-branch x)))))))
 (defn total-weight [m]
   (+ (branch-weight (left-branch m))
      (branch-weight (right-branch m))))
