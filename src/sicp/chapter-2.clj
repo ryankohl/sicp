@@ -145,3 +145,162 @@
     (div-interval one
                   (add-interval (div-interval one r1)
                                 (div-interval one r2)))))
+
+;; ex 2.17
+(defn last-pair [L]
+  (loop [l L]
+    (cond (empty? (rest l)) l
+          true (recur (rest l)))))
+
+;; ex 2.18
+(defn reverse [L]
+  (loop [orig L
+         ans '()]
+    (cond (empty? orig) ans
+          true (recur (rest orig) (cons (first orig) ans)))))
+
+;; ex 2.19 
+(defn first-denom [L] (first L))
+(defn except-first-denom [L] (rest L))
+(defn no-more? [L] (empty? L))
+(defn cc [amount coin-values]
+  (cond (= amount 0) 1
+        (or (< amount 0) (no-more? coin-values)) 0
+        true (+ (cc amount (except-first-denom coin-values))
+                (cc (- amount (first-denom coin-values)) coin-values))))
+(def us-coins (list 50 25 10 5 1))
+(def su-coins (list 1 5 10 25 50))
+
+;; ex 2.20
+(defn same-parity [a & bs]
+  (cond (even? a) (cons a (filter even? bs))
+        (odd? a) (cons a (filter odd? bs))))
+
+;; ex 2.21
+(defn square-list [L]
+  (if (empty? L)
+    '()
+    (cons (* (first L) (first L)) (square-list (rest L)))))
+(defn square-list [L] (map #(* % %) L))
+
+;; ex 2.23
+(defn for-each [f L]
+  (loop [l L]
+    (f (first l))
+    (cond (empty? (rest l)) true
+          true (recur (rest l)))))
+
+;; ex 2.27
+(defn deep-reverse [L]
+  (loop [orig L
+         ans '()]
+    (cond (empty? orig) ans
+          (coll? (first orig)) (recur (rest orig)
+                                      (cons (deep-reverse (first orig)) ans))
+          true (recur (rest orig)
+                      (cons (first orig) ans)))))
+
+(defn append [x y]
+  (if (empty? x)
+    y
+    (cons (first x) (append (rest x) y))))
+
+;; ex 2.28
+(defn fringe [L]
+  (loop [l L
+         ans []]
+    (cond (empty? l) (reverse ans)
+          (coll? (first l)) (recur (rest l) (append
+                                             (reverse (fringe (first l))) ans))
+          true (recur (rest l) (cons (first l) ans)))))
+
+;; ex 2.29
+(defn make-mobile [left right] (list left right))
+(defn make-branch [length structure] (list length structure))
+(defn left-branch [mobile] (first mobile))
+(defn right-branch [mobile] (last mobile))
+(defn branch-length [branch] (first branch))
+(defn branch-structure [branch] (last branch))
+(defn branch-weight [b]
+  (let [x (branch-structure b)]
+  (loop [ans 0]
+    (cond (number? x) x
+          (coll? x) (total-weight x)))))
+(defn total-weight [m]
+  (+ (branch-weight (left-branch m))
+     (branch-weight (right-branch m))))
+(defn torque [b] (* (branch-length b) (branch-weight b)))
+(defn balanced? [m]
+  (= (torque (left-branch m))
+     (torque (right-branch m))))
+(def mob (make-mobile
+          (make-branch 3 10)
+          (make-branch 6
+                       (make-mobile
+                        (make-branch 2 5)
+                        (make-branch 8 (make-mobile
+                                        (make-branch 1 7)
+                                        (make-branch 2 4)))))))
+(def mobb (make-mobile
+           (make-branch 1 (make-mobile
+                            (make-branch 5 7)
+                            (make-branch 5 7)))
+           (make-branch 1 (make-mobile
+                            (make-branch 5 7)
+                            (make-branch 5 7)))))
+
+;; ex 2.30
+(defn square-tree [x]
+  (map #(if (coll? %) (square-tree %) (* % %)) x))
+(def x [1 [2 [3 4] 5] [6 7]])
+
+;; ex 2.31
+(defn tree-map [f t]
+  (map #(if (coll? %) (tree-map f %) (f %)) t))
+
+;; ex 2.32
+(defn subsets [s]
+  (if (empty? s)
+    (list nil)
+    (let [r (subsets (rest s))]
+      (append r (map #(cons (first s) %) r)))))
+
+;; ex 2.33
+(defn map- [p s] (reduce (fn [x y] (conj x (p y))) [] s))
+(defn append- [a b] (reduce (fn [x y] (conj x y)) a b)) ; for vectors
+(defn length- [s] (reduce (fn [x y] (inc x)) 0 s))
+
+;; ex 2.34
+(defn horner-eval [x coeff]
+  (/ (reduce (fn [a b] (* (+ a b) x)) 
+          0
+          (reverse coeff))
+     x))
+; need to divide by x to correct for the fact that a0 shouldn't be
+; multiplied by x
+
+;; ex 2.35
+(defn count-leaves [t]
+  (reduce + (map count (map fringe t))))
+
+;; ex 2.36
+(defn reduce-n [op init seqs]
+  (if (empty? (first seqs))
+              nil
+              (cons (reduce op init (map first seqs))
+                    (reduce-n op init (map rest seqs)))))
+(def s (list (list 1 2 3) (list 4 5 6) (list 7 8 9) (list 10 11 12)))
+
+;; ex 2.37
+(def m [[1 2 3 4] [4 5 6 6] [6 7 8 9] [5 3 9 1]])
+(def v [1 2 3 4])
+(defn dot-product [v w] (reduce + 0 (map * v w)))
+(defn matrix-*-vector [m v] (map (fn [x] (dot-product x v)) m))
+(defn transpose [m] (reduce-n conj [] m))
+(defn matrix-*-matrix [m n]
+  (let [cols (transpose n)]
+    (map (fn [x] (matrix-*-vector cols x)) m)))
+
+;; ex 2.39
+(defn reverse-right [s] (reduce (fn [a b] (cons b a)) [] s))
+(defn reverse-left [s] (reduce (fn [a b] (conj a b)) [] (reverse s)))
