@@ -305,3 +305,79 @@
 ;; ex 2.39
 (defn reverse-right [s] (reduce (fn [a b] (cons b a)) [] s))
 (defn reverse-left [s] (reduce (fn [a b] (conj a b)) [] (reverse s)))
+
+;; ex 2.40
+(defn flatmap [f s] (reduce append (list) (map f s)))
+(defn unique-pairs [n]
+  (flatmap (fn [x] (map #(list % (+ x 1))
+                   (range 1 (+ x 1))))
+       (range 1 n)))
+(defn lcd [n t]
+  (loop [a t]
+    (cond (> (* a a) n) n
+          (= (rem n a) 0) a
+          (= 2 a) (recur 3)
+          true (recur (+ a 2)))))
+(defn prime? [x] (and (not= x 1) (= x (lcd x 2))))
+(defn prime-sum? [p]
+  (prime? (+ (first p) (last p))))
+(defn make-pair-sum [p]
+  (list (first p) (last p) (+ (first p) (last p))))
+(defn prime-sum-pairs [n]
+  (map make-pair-sum (filter prime-sum? (unique-pairs n))))
+
+;; ex 2.41
+(defn unique-triples [n]
+  (flatmap (fn [p]
+             (map #(cons % p) (range 1 (first p))))
+           (unique-pairs n)))
+(defn sum-to-x? [x] (fn [[a b c]] (= x (+ a b c))))
+(defn make-triple-sum [[a b c]] (list a b c (+ a b c)))
+(defn x-sum-triples [n x]
+  (map make-triple-sum (filter (sum-to-x? x) (unique-triples n))))
+
+;; ex 2.42
+(defn adjoin-position [new-row k rest-of-queens]
+  (let [head (filter #(< 0 %) rest-of-queens)
+        tail (rest (filter zero? rest-of-queens))]
+    (append (conj head new-row) tail)))
+;; seq of seqs (row index starts at 1, 0 is placeholder): [1 2 2 4 0 0 0 0]
+;; row safe: is any number repeated? (row is the value)
+;; col safe: auto
+;; dgn safe: are the row/col values unique?
+(defn empty-board [board-size]
+  (loop [s board-size
+         ans []]
+    (cond (= s 0) (list ans)
+          true (recur (dec s) (conj ans 0)))))
+(defn transp [x]
+  (let [a (zipmap x (range 1 (inc (count x))))
+        b (into {} (for [[k v] a] [v k]))]
+    (loop [ans []
+           i 0]
+      (cond (= i (count a)) ans
+            true (recur (cons (b (inc i)) ans) (inc i))))))
+(defn safe? [pos]
+  (let [z    (fn [s] (filter #(< 0 %) s))
+        spos (set (z pos))
+        diag (fn [s] (map (fn [x y] (/ x y))
+                         (filter #(< 0 %) s)
+                         (range 1 (inc (count (filter #(< 0 %) s))))))]
+    (cond
+     (not= (count (z pos)) (count spos)) false
+     (not= (count (diag (z pos))) (count (set (diag (z pos))))) false
+     (not= (count (diag (transp (z pos)))) (count (set (diag (transp (z pos)))))) false
+     true true)))
+     
+(defn queen [board-size]
+  (letfn [(queen-cols [k]
+            (if (= k 0)
+              (empty-board board-size)
+              (filter (fn [pos] (safe? pos))
+                      (flatmap (fn [rest-of-queens]
+                                 (map (fn [new-row] (adjoin-position new-row
+                                                                    board-size
+                                                                    rest-of-queens))
+                                      (range 1 (inc board-size))))
+                               (queen-cols (dec k))))))]
+    (queen-cols board-size))) 
